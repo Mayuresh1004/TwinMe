@@ -25,5 +25,5 @@ const linkSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
 const Link = mongoose.model('Link', linkSchema);
-export { User, Tags };
+export { User, Tags, Content, Link };
 //# sourceMappingURL=db.js.map

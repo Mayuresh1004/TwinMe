@@ -1,15 +1,87 @@
 import express from 'express';
+import { User } from './db.js';
+import {z} from 'zod';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 
-app.post('/api/v1/signup', (req, res) => {
-
+const userSchema = z.object({
+  username: z.string().min(3).max(10, { message: "Username must be between 3 and 10 characters" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(6).max(20).refine(
+  val =>
+    /[A-Z]/.test(val) &&         // at least one uppercase
+    /[a-z]/.test(val) &&         // at least one lowercase
+    /[0-9]/.test(val) &&         // at least one number
+    /[^A-Za-z0-9]/.test(val),    // at least one special character
+  {
+    error: "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+  }
+)
 });
 
-app.post('/api/v1/signin', (req, res) => {
+app.use(express.json());
 
+
+app.post('/api/v1/signup', async (req, res) => {
+    const parseResult = userSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        return res.status(411).json({ errors: parseResult.error?.issues });
+    }
+    const { username, email,  password } = parseResult.data;
+
+    try {
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const UserExists = await User.findOne({username})
+        if (UserExists) {
+            return  res.status(403).json({ error: "Username already exists" });
+        }
+    
+        await User.create({ username, email, password: hashedPassword });
+        return res.status(200).json({ message: "User created successfully" });
+
+    } catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+    
 });
 
+app.post('/api/v1/signin', async (req, res) => {
+
+    const { username, password } = req.body;
+
+    try {
+        
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(403).json({ error: "Wrong username or password" });
+        }  
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(403).json({ error: "Wrong username or password" });
+        }
+
+        const token = jwt.sign({ userId: user._id}, process.env.JWT_SECRET as string, );
+        return res.status(200).json({ token });
+
+
+    } catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+const contentSchema = z.object({
+  link: z.string().url({ message: "Invalid URL" }),
+  type: z.enum(['image', 'video', 'article', 'audio']),
+  title: z.string().min(1, { message: "Title cannot be empty" }),
+  tags: z.array(z.string()),
+});
 
 app.post('/api/v1/content', (req, res) => {
 
