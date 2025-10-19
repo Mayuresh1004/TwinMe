@@ -170,24 +170,29 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
    
     const hash = req.params.shareLink;
 
-    const link = await Link.findOne({hash:hash})
-
-    if (!link) {
-        return res.status(411).json({message:"Incorrect Inputs"})
+    try {
+        const link = await Link.findOne({hash:hash})
+    
+        if (!link) {
+            return res.status(411).json({message:"Incorrect Inputs"})
+        }
+    
+        const content = await Content.find({
+            // @ts-ignore
+            userId: link.userId
+        })
+    
+        const user = await User.findOne({
+            // @ts-ignore
+            _id: link.userId
+        })
+    
+        return res.status(200).json({ username: user?.username, content,})
+    
+    } catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+        
     }
-
-    const content = await Content.find({
-        // @ts-ignore
-        userId: link.userId
-    })
-
-    const user = await User.findOne({
-        // @ts-ignore
-        _id: link.userId
-    })
-
-    return res.status(200).json({ username: user?.username, content,})
-
 });
 
 
