@@ -1,9 +1,10 @@
 import express from 'express';
-import { User } from './db.js';
+import { Content, User } from './db.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { userMiddleware } from './middleware.js';
 dotenv.config();
 const app = express();
 const userSchema = z.object({
@@ -55,9 +56,38 @@ app.post('/api/v1/signin', async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
-app.post('/api/v1/content', (req, res) => {
+const contentSchema = z.object({
+    link: z.string().url({ message: "Invalid URL" }),
+    type: z.enum(['image', 'video', 'article', 'audio']),
+    title: z.string().min(1, { message: "Title cannot be empty" }),
+    tags: z.array(z.string()),
 });
-app.get('/api/v1/content', (req, res) => {
+app.post('/api/v1/content', userMiddleware, async (req, res) => {
+    const parseResult = contentSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        return res.status(411).json({ errors: parseResult.error?.issues });
+    }
+    const { link, type, title, tags } = parseResult.data;
+    try {
+        await Content.create({
+            link,
+            type,
+            title,
+            // @ts-ignore
+            userId: req.userId,
+            tags: tags
+        });
+        return res.status(200).json({ message: "Content added successfully" });
+    }
+    catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+app.get('/api/v1/content', userMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId = req.userId;
+    const content = await Content.find({ userId: userId }).populate("userId", "username");
+    return res.status(200).json({ content });
 });
 app.delete('/api/v1/content', (req, res) => {
 });
