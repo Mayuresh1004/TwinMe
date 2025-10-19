@@ -1,10 +1,11 @@
 import express from 'express';
-import { Content, User } from './db.js';
+import { Content, Link, User } from './db.js';
 import {z} from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { userMiddleware } from './middleware.js';
+import { random } from './utils.js';
 
 dotenv.config();
 
@@ -129,43 +130,63 @@ app.delete('/api/v1/content',userMiddleware, async (req, res) => {
     return res.status(200).json({ message: "Content deleted successfully" });
 });
 
-const shareSchema = z.object({
+const linkSchema = z.object({
     share: z.boolean(),
 });
 
-app.post('/api/v1/brain/share',userMiddleware, (req, res) => {
+app.post('/api/v1/brain/share',userMiddleware, async (req, res) => {
 
-    const parseResult = shareSchema.safeParse(req.body);
+    const parseResult = linkSchema.safeParse(req.body);
     if (!parseResult.success) {
         return res.status(411).json({ errors: parseResult.error?.issues });
     }
 
     const { share } = parseResult.data;
-    if (share === false){
-        return res.status(200).json({ message: "Share link disabled" });
-    }
     // @ts-ignore
     const userId = req.userId;
-    const shareLink = `${userId}/`;
-    return res.status(200).json({ message: `link: http://localhost:3000/api/v1/brain/${shareLink}` });
+    const hash = random(10);
+    try {
+        if (share) {
+            const existingLink = await Link.findOne({userId})
+            if (existingLink) {
+                return res.status(200).json({ message: `link: http://localhost:3000/api/v1/brain/${existingLink.hash}` });
+            }
+            await Link.create({
+                hash: hash,
+                userId: userId,
+        })}
+        else{
+            await Link.deleteMany({ userId })
+        }
+        return res.status(200).json({ message: ` http://localhost:3000/api/v1/brain/${hash}` });
+    } catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
 
 });
 
 
 app.get('/api/v1/brain/:shareLink', async (req, res) => {
-    const { shareLink } = req.params;
+   
+    const hash = req.params.shareLink;
 
-    if (!shareLink) {
-        return res.status(404).json({ error: "Invalid share link" });
-    }
-    
-    try {
-        const content = await Content.find({userId: shareLink}).populate("userId", "username");
-        return res.status(200).json({content})
-    } catch (error) {
-        return res.status(500).json({ error: "Internal server error" });
+    const link = await Link.findOne({hash:hash})
+
+    if (!link) {
+        return res.status(411).json({message:"Incorrect Inputs"})
     }
 
+    const content = await Content.find({
+        // @ts-ignore
+        userId: link.userId
+    })
+
+    const user = await User.findOne({
+        // @ts-ignore
+        _id: link.userId
+    })
+
+    return res.status(200).json({ username: user?.username, content,})
 
 });
 
