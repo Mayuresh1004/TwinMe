@@ -113,12 +113,12 @@ app.get('/api/v1/content',userMiddleware, async (req, res) => {
     // @ts-ignore
     const userId = req.userId;
     const content = await Content.find({userId: userId}).populate("userId", "username");
-    return res.status(200).json({ content})
+    return res.status(200).json({content})
 
 });
 
 
-app.delete('/api/v1/content', async (req, res) => {
+app.delete('/api/v1/content',userMiddleware, async (req, res) => {
 
     const { contentId } = req.body;
 
@@ -129,13 +129,43 @@ app.delete('/api/v1/content', async (req, res) => {
     return res.status(200).json({ message: "Content deleted successfully" });
 });
 
+const shareSchema = z.object({
+    share: z.boolean(),
+});
 
-app.post('/api/v1/brain/share', (req, res) => {
+app.post('/api/v1/brain/share',userMiddleware, (req, res) => {
+
+    const parseResult = shareSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        return res.status(411).json({ errors: parseResult.error?.issues });
+    }
+
+    const { share } = parseResult.data;
+    if (share === false){
+        return res.status(200).json({ message: "Share link disabled" });
+    }
+    // @ts-ignore
+    const userId = req.userId;
+    const shareLink = `${userId}/`;
+    return res.status(200).json({ message: `link: http://localhost:3000/api/v1/brain/${shareLink}` });
 
 });
 
 
-app.get('/api/v1/brain/:shareLink', (req, res) => {
+app.get('/api/v1/brain/:shareLink', async (req, res) => {
+    const { shareLink } = req.params;
+
+    if (!shareLink) {
+        return res.status(404).json({ error: "Invalid share link" });
+    }
+    
+    try {
+        const content = await Content.find({userId: shareLink}).populate("userId", "username");
+        return res.status(200).json({content})
+    } catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
+
 
 });
 
