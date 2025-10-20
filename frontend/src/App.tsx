@@ -3,14 +3,16 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import { Button } from './components/ui/Button'
+import { PlusIcon } from './icons/PlusIcons'
 
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
-      <Button variant="primary" size="md" text="Click me" onClick={() => setCount(count + 1)}></Button>
+      <Button variant="primary" size="sm" text="Click me" onClick={ ()=>{} }></Button>
+      <Button variant="primary" size="md" text="Click me" onClick={ ()=>{} }></Button>
+      <Button variant="secondary" size="lg" text="Tap me" onClick={ ()=>{} } startIcon={<PlusIcon size='lg'/>}></Button>
     </>
   )
 }
