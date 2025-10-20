@@ -1,10 +1,11 @@
+import type { ReactElement } from "react";
 
 interface ButtonProps {
     variant: Variants;
     size: Size;
     text: string;
-    startIcon?: any;
-    endIcon?: any;
+    startIcon?: ReactElement;
+    endIcon?: ReactElement;
     onClick: () => void;
 }
 type Variants = "primary" | "secondary";
@@ -15,20 +16,21 @@ const variantStyles: Record<Variants, string>= {
     "secondary": "bg-purple-300 text-purple-600 hover:bg-purple-200",
 }
 const sizeStyles: Record<Size, string>= {
-    "sm": "py-1 px-2",
-    "md": "py-2 px-4",
-    "lg": "py-4 px-6",
+    "sm": "py-1 px-2 m-2 text-sm",
+    "md": "py-2 px-4 m-2 text-md",  
+    "lg": "py-2 px-6 m-2 text-xl",
 }
 
-const defaultStyles = "rounded-md focus:outline-none flex";
+const defaultStyles = "rounded-md focus:outline-none flex justify-between";
 
 export const Button = (props: ButtonProps) => {
 
 
     return <button className={
-        `${variantStyles[props.variant]} ${defaultStyles} ${sizeStyles[props.size]}`
-    } >
-        {props.startIcon ? <div pr-2>{props.startIcon}</div>: null} {props.text} {props.endIcon }
+        `${variantStyles[props.variant]} ${defaultStyles} ${sizeStyles[props.size]} flex `
+    } ><div className="flex items-center ">
+        {props.startIcon ? <div className={"mr-2"}>{props.startIcon}</div>: null} {props.text} {props.endIcon }
+    </div>
     </button>
 
  }
