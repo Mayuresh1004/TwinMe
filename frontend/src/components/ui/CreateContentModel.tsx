@@ -1,36 +1,76 @@
-import { useRef } from "react"
-import { CrossIcon } from "../../icons/CrossIcon"
-import { Button } from "./Button"
-import { Input } from "./Input"
-import { useOnClickOutside } from "../../hooks/useOnOutsideClick"
+import { useRef, useState } from "react";
+import { CrossIcon } from "../../icons/CrossIcon";
+import { Button } from "./Button";
+import { Input } from "./Input";
+import { BACKEND_URL } from "../../config";
+import axios from "axios";
 
+enum ContentType {
+    Youtube = "youtube",
+    Twitter = "twitter"
+}
 
-export function CreateContentModel({open,onClosed}) {
+// controlled component
+export function CreateContentModel({open, onClose}) {
+    const titleRef = useRef<HTMLInputElement>();
+    const linkRef = useRef<HTMLInputElement>();
+    const [type, setType] = useState(ContentType.Youtube);
 
-    const modelRef = useRef(null)
-    useOnClickOutside(modelRef, onClosed);
+    async function addContent() {
+        const title = titleRef.current?.value;
+        const link = linkRef.current?.value;
+
+        await axios.post(`${BACKEND_URL}/api/v1/content`, {
+            link,
+            title,
+            type,
+            tags: []
+        }, {
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+        })
+
+        onClose();
+
+    }
 
     return <div>
-    { open && <div className="w-screen h-screen backdrop-blur-xl fixed top-0 left-0 flex justify-center items-center">
-        <div className="bg-white p-4 rounded border-slate-300 border"  ref = {modelRef}>
-           <div className="flex justify-end">
-            <button
-                onClick={onClosed}
-                className="p-1 rounded hover:bg-gray-100 cursor-pointer"
-            >
-                <CrossIcon size="lg" />
-            </button>
+        {open && <div> 
+            <div className="w-screen h-screen backdrop-blur-xs fixed top-0 left-0  flex justify-center">
+               
             </div>
-
-            <div>
-                <Input placeholder={"Title"}  ></Input>
-                <Input placeholder={"Link"}  ></Input>
-                <div className="flex justify-center">
-                <Button variant="primary" text="Submit" size="md"></Button>
-                </div>
+            <div className="w-screen h-screen fixed top-0 left-0 flex justify-center">
+                <div className="flex flex-col justify-center">
+                    <span className="bg-white opacity-100 p-4 rounded fixed">
+                        <div className="flex justify-end">
+                            <div onClick={onClose} className="cursor-pointer">
+                                <CrossIcon />
+                            </div>
+                        </div>
+                        <div>
+                            <Input ref={titleRef} placeholder={"Title"} />
+                            <Input ref={linkRef} placeholder={"Link"} />
+                        </div>
+                        <div>
+                            <h1>Type</h1>
+                            <div className="flex gap-1 justify-center pb-2">
+                                <Button text="Youtube" variant={type === ContentType.Youtube ? "primary" : "secondary"} onClick={() => {
+                                    setType(ContentType.Youtube);
+                                } } size={"md"}></Button>
+                                <Button text="Twitter" variant={type === ContentType.Twitter ? "primary" : "secondary"} onClick={() => {
+                                    setType(ContentType.Twitter);
+                                } } size={"sm"}></Button>
+                            </div>
+                        </div>
+                        <div className="flex justify-center">
+                            <Button onClick={addContent} variant="primary" text="Submit" size={"sm"} />
+                        </div>
+                    </span>
+                </div>     
             </div>
-        </div>
-    </div>}
+            
+        </div>}
     </div>
 
 }

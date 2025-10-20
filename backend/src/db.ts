@@ -17,7 +17,7 @@ const tagsSchema = new mongoose.Schema({
 
 const Tags = mongoose.model('Tags', tagsSchema);
 
-const contentTypes = ['image', 'video', 'article', 'audio']; 
+const contentTypes = ['twitter', 'youtube',]; 
 
 
 const contentSchema = new mongoose.Schema({

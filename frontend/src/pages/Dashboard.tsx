@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../components/ui/Button'
 import { PlusIcon } from '../icons/PlusIcons'
 import { ShareIcon } from '../icons/ShareIcon'
@@ -6,28 +6,52 @@ import { Card } from '../components/ui/Card'
 import { CreateContentModel } from '../components/ui/CreateContentModel'
 import { useOnClickOutside } from '../hooks/useOnOutsideClick'
 import { SideBar } from '../components/ui/SideBar'
+import { useContent } from '../hooks/useContent'
+import axios from 'axios'
+import { BACKEND_URL } from '../config'
 
 
-export function Dashboard(){
-    
-      const [modelOpen,setModelOpen] = useState(false);
-      const ref = useRef(null)
-      useOnClickOutside(ref, () => setModelOpen(false));
 
-    return <>
-    <SideBar></SideBar>
-    <div className='p-4 ml-72 bg-gray-100 min-h-screen ' >
-      <div ref = {ref}>
-      <CreateContentModel  open={modelOpen} onClosed={ ()=>{setModelOpen(false)}}></CreateContentModel>
+export function Dashboard() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const {contents, refresh} = useContent();
+
+  useEffect(() => {
+    refresh();
+  }, [modalOpen])
+
+  return <div>
+    <SideBar />
+    <div className="p-4 ml-72 min-h-screen bg-gray-100 border-2">
+      <CreateContentModel open={modalOpen} onClose={() => {
+        setModalOpen(false);
+      }} />
+      <div className="flex justify-end gap-4">
+        <Button onClick={() => {
+          setModalOpen(true)
+        } } variant="primary" text="Add content" startIcon={<PlusIcon size='md'/>} size={'md'}></Button>
+        <Button onClick={async () => {
+          const response = await axios.post(`${BACKEND_URL}/api/v1/brain/share`, {
+            share: true
+          }, {
+            headers: {
+              "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+          })
+          console.log(response.data.message);
+          
+          const shareUrl = `${response.data.message}`
+          alert(shareUrl)
+        } } variant="secondary" text="Share brain" startIcon={<ShareIcon size='md'/>} size={'md'}></Button>
       </div>
-      <div className='flex justify-end' >
-      <Button variant="primary" size="md" text="Add Content" onClick={ ()=>{setModelOpen(true)} } startIcon={<PlusIcon size='lg'/>}></Button>
-      <Button variant="secondary" size="md" text="Share ur Twin" onClick={ ()=>{} } startIcon={<ShareIcon size={"md"}/>}></Button>
+
+      <div className="flex gap-4 flex-wrap">
+        {contents.map(({title, link, type}) => <Card 
+            title={title}
+            link={link}
+            type={type}
+        />)}
       </div>
-      <div className='flex gap-4'>
-      <Card type='twitter' link='https://twitter.com/adxtyahq/status/1980126365279240402' title='BlockChain Intern'></Card>
-      <Card type='youtube' link='https://www.youtube.com/watch?v=_zYqdyX1ZTo&list=RD_zYqdyX1ZTo&start_radio=1' title='Podcast'></Card>
-      </div>
-      </div>
-    </>
+    </div>
+  </div>
 }

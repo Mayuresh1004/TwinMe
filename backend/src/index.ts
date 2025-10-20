@@ -82,7 +82,7 @@ app.post('/api/v1/signin', async (req, res) => {
 
 const contentSchema = z.object({
   link: z.string().url({ message: "Invalid URL" }),
-  type: z.enum(['image', 'video', 'article', 'audio']),
+  type: z.enum(['twitter', 'youtube']),
   title: z.string().min(1, { message: "Title cannot be empty" }),
   tags: z.array(z.string()),
 });
