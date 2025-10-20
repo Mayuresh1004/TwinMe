@@ -122,6 +122,7 @@ app.post('/api/v1/brain/share', userMiddleware, async (req, res) => {
         }
         else {
             await Link.deleteMany({ userId });
+            return res.status(200).json({ message: "Link Removed" });
         }
         return res.status(200).json({ message: ` http://localhost:3000/api/v1/brain/${hash}` });
     }
@@ -131,19 +132,24 @@ app.post('/api/v1/brain/share', userMiddleware, async (req, res) => {
 });
 app.get('/api/v1/brain/:shareLink', async (req, res) => {
     const hash = req.params.shareLink;
-    const link = await Link.findOne({ hash: hash });
-    if (!link) {
-        return res.status(411).json({ message: "Incorrect Inputs" });
+    try {
+        const link = await Link.findOne({ hash: hash });
+        if (!link) {
+            return res.status(411).json({ message: "Incorrect Inputs" });
+        }
+        const content = await Content.find({
+            // @ts-ignore
+            userId: link.userId
+        });
+        const user = await User.findOne({
+            // @ts-ignore
+            _id: link.userId
+        });
+        return res.status(200).json({ username: user?.username, content, });
     }
-    const content = await Content.find({
-        // @ts-ignore
-        userId: link.userId
-    });
-    const user = await User.findOne({
-        // @ts-ignore
-        _id: link.userId
-    });
-    return res.status(200).json({ username: user?.username, content, });
+    catch (error) {
+        return res.status(500).json({ error: "Internal server error" });
+    }
 });
 app.listen(3000, () => {
     console.log('Server is running on port 3000');

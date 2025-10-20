@@ -157,6 +157,7 @@ app.post('/api/v1/brain/share',userMiddleware, async (req, res) => {
         })}
         else{
             await Link.deleteMany({ userId })
+            return res.status(200).json({ message: "Link Removed" });
         }
         return res.status(200).json({ message: ` http://localhost:3000/api/v1/brain/${hash}` });
     } catch (error) {
