@@ -6,8 +6,10 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { userMiddleware } from './middleware.js';
 import { random } from './utils.js';
+import cors from 'cors';
 dotenv.config();
 const app = express();
+app.use(cors());
 const userSchema = z.object({
     username: z.string().min(3).max(10, { message: "Username must be between 3 and 10 characters" }),
     email: z.string().email({ message: "Invalid email address" }),

@@ -7,6 +7,8 @@ interface ButtonProps {
     startIcon?: ReactElement;
     endIcon?: ReactElement;
     onClick?: () => void;
+    fullWidth?: boolean;
+    loading?: boolean;
 }
 type Variants = "primary" | "secondary";
 type Size = "sm" | "md" | "lg";
@@ -27,7 +29,9 @@ export const Button = (props: ButtonProps) => {
 
 
     return <button onClick={props.onClick} className={
-        `${variantStyles[props.variant]} ${defaultStyles} ${sizeStyles[props.size]} flex `
+        `${variantStyles[props.variant]} ${defaultStyles} ${sizeStyles[props.size]} flex ${props.fullWidth ? 'w-full justify-center items-center' : ''}
+        ${props.loading ? 'opacity-50 cursor-not-allowed' : ''}
+        ` 
     } ><div className="flex items-center justify-center ">
         {props.startIcon ? <div className={"mr-2"}>{props.startIcon}</div>: null} {props.text} {props.endIcon }
     </div>
